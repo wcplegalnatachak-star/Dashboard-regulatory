@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Pro - จัดการงาน FDA/DLD/HALAL (Fixed)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .header .badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.2);
+            color: #d1fae5;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-top: 10px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .action-buttons {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+        }
+
+        .btn-primary:hover {
+            background: #f0f0f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+            font-size: 0.9em;
+            padding: 8px 16px;
+        }
+
+        .btn-edit {
+            background: #f59e0b;
+            color: white;
+            font-size: 0.85em;
+            padding: 6px 12px;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .filters {
+            display: flex;
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.95em;
+        }
+
+        .filter-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-group select:hover {
+            border-color: #667eea;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            opacity: 0.1;
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-card.total { border-left-color: #667eea; }
+        .stat-card.total::before { background: #667eea; }
+        .stat-card.complete { border-left-color: #10b981; }
+        .stat-card.complete::before { background: #10b981; }
+        .stat-card.progress { border-left-color: #f59e0b; }
+        .stat-card.progress::before { background: #f59e0b; }
+        .stat-card.remaining { border-left-color: #ef4444; }
+        .stat-card.remaining::before { background: #ef4444; }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-value {
+            font-size: 2.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-card.total .stat-value { color: #667eea; }
+        .stat-card.complete .stat-value { color: #10b981; }
+        .stat-card.progress .stat-value { color: #f59e0b; }
+        .stat-card.remaining .stat-value { color: #ef4444; }
+
+        .stat-subtitle {
+            font-size: 0.85em;
+            color: #868e96;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stat-percentage {
+            font-size: 0.9em;
+            margin-top: 5px;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+
+        .charts-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #343a40;
+        }
+
+        .table-section {
+            padding: 30px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .table-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #343a40;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 2px solid #dee2e6;
+            border-radius: 25px;
+            font-size: 0.95em;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-box::before {
+            content: '🔍';
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.95em;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-complete { background: #d1fae5; color: #065f46; }
+        .status-progress { background: #fef3c7; color: #92400e; }
+        .status-inprogress { background: #fef3c7; color: #92400e; }
+        .status-pending { background: #fee2e2; color: #991b1b; }
+        .status-cancelled { background: #e5e7eb; color: #374151; }
+
+        .type-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .type-FDA { background: #dbeafe; color: #1e40af; }
+        .type-DLD { background: #fce7f3; color: #9f1239; }
+        .type-HALAL { background: #d1fae5; color: #065f46; }
+        .type-OTHER { background: #e5e7eb; color: #374151; }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close:hover {
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .action-buttons {
+                position: static;
+                transform: none;
+                justify-content: center;
+                margin-top: 15px;
+                flex-wrap: wrap;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .table-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .table-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 2000;
+            animation: slideInRight 0.3s;
+            display: none;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            border-left: 5px solid #10b981;
+            color: #065f46;
+        }
+
+        .notification.error {
+            border-left: 5px solid #ef4444;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>📊 Dashboard Pro - จัดการงาน</h1>
+                <p>ระบบติดตามงาน FDA (อาหาร) | DLD (อาหารสัตว์) | HALAL</p>
+                <div class="badge">✅ Auto-Save เปิดใช้งาน</div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-success" onclick="openAddModal()">➕ เพิ่มงานใหม่</button>
+                <button class="btn btn-warning" onclick="resetToDefault()">🔄 Reset ข้อมูล</button>
+                <button class="btn btn-primary" onclick="exportToExcel()">📥 Export Excel</button>
+                <label for="importExcel" class="btn btn-primary" style="margin: 0; cursor: pointer;">
+                    📤 Import Excel
+                    <input type="file" id="importExcel" accept=".xlsx,.xls" style="display: none;" onchange="importFromExcel(event)">
+                </label>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label for="typeFilter">🔍 ประเภทงาน</label>
+                <select id="typeFilter" onchange="filterData()">
+                    <option value="ALL">ทั้งหมด</option>
+                    <option value="FDA">FDA (อาหาร)</option>
+                    <option value="DLD">DLD (อาหารสัตว์)</option>
+                    <option value="HALAL">HALAL</option>
+                    <option value="OTHER">อื่นๆ</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="monthFilter">📅 เดือนที่รับงาน</label>
+                <select id="monthFilter" onchange="filterData()">
+                    <option value="ALL">ทั้งหมด</option>
+                    <option value="01">มกราคม</option>
+                    <option value="02">กุมภาพันธ์</option>
+                    <option value="03">มีนาคม</option>
+                    <option value="04">เมษายน</option>
+                    <option value="05">พฤษภาคม</option>
+                    <option value="06">มิถุนายน</option>
+                    <option value="07">กรกฎาคม</option>
+                    <option value="08">สิงหาคม</option>
+                    <option value="09">กันยายน</option>
+                    <option value="10">ตุลาคม</option>
+                    <option value="11">พฤศจิกายน</option>
+                    <option value="12">ธันวาคม</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="yearFilter">📆 ปีที่รับงาน</label>
+                <select id="yearFilter" onchange="filterData()">
+                    <option value="ALL">ทั้งหมด</option>
+                    <option value="2022">2022</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                    <option value="2025">2025</option>
+                    <option value="2026">2026</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="registrationFilter">📋 ประเภท Registration</label>
+                <select id="registrationFilter" onchange="filterData()">
+                    <option value="ALL">ทั้งหมด</option>
+                    <option value="ขึ้นทะเบียนตำหรับอาหาร">ขึ้นทะเบียนตำหรับอาหาร</option>
+                    <option value="แก้ไขทะเบียนตำหรับอาหาร">แก้ไขทะเบียนตำหรับอาหาร</option>
+                    <option value="ขึ้นทะเบียน">ขึ้นทะเบียน</option>
+                    <option value="ขึ้นทะเบียนฉลากอาหาร">ขึ้นทะเบียนฉลากอาหาร</option>
+                    <option value="หนังสือหารือ">หนังสือหารือ</option>
+                    <option value="ต่ออายุใบรับรองเครื่องหมายฮาลา">ต่ออายุใบรับรองฮาลา</option>
+                    <option value="ใช้งาน Barcode">ใช้งาน Barcode</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="statusFilter">🎯 สถานะงาน</label>
+                <select id="statusFilter" onchange="filterData()">
+                    <option value="ALL">ทั้งหมด</option>
+                    <option value="Complete">✓ เสร็จสมบูรณ์</option>
+                    <option value="In Progress">⏳ กำลังดำเนินการ</option>
+                    <option value="Pending">⏸ รอดำเนินการ</option>
+                    <option value="Cancelled">✖ ยกเลิก</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <div class="stat-label">งานทั้งหมด</div>
+                <div class="stat-value" id="totalJobs">0</div>
+                <div class="stat-subtitle">Total Jobs</div>
+            </div>
+            <div class="stat-card complete">
+                <div class="stat-label">เสร็จสมบูรณ์</div>
+                <div class="stat-value" id="completeJobs">0</div>
+                <div class="stat-subtitle">Completed</div>
+                <div class="stat-percentage" id="completePercent"></div>
+            </div>
+            <div class="stat-card progress">
+                <div class="stat-label">กำลังดำเนินการ</div>
+                <div class="stat-value" id="progressJobs">0</div>
+                <div class="stat-subtitle">In Progress</div>
+                <div class="stat-percentage" id="progressPercent"></div>
+            </div>
+            <div class="stat-card remaining">
+                <div class="stat-label">รอดำเนินการ</div>
+                <div class="stat-value" id="remainingJobs">0</div>
+                <div class="stat-subtitle">Pending</div>
+                <div class="stat-percentage" id="remainingPercent"></div>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <div class="chart-title">สัดส่วนสถานะงาน</div>
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-title">จำนวนงานแยกตามประเภท</div>
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">งานรายเดือน (Taking Order)</div>
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div class="table-header">
+                <div class="table-title">📋 รายละเอียดงานทั้งหมด (<span id="tableCount">0</span> รายการ)</div>
+                <div class="table-actions">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="ค้นหางาน..." onkeyup="searchTable()">
+                    </div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="jobsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">ลำดับ</th>
+                            <th style="width: 150px;">รหัสงาน</th>
+                            <th style="width: 80px;">ประเภท</th>
+                            <th>ชื่อผลิตภัณฑ์</th>
+                            <th>ผู้ผลิต</th>
+                            <th style="width: 120px;">วันที่รับงาน</th>
+                            <th style="width: 120px;">กำหนดเสร็จ</th>
+                            <th style="width: 130px;">สถานะ</th>
+                            <th>ผู้รับผิดชอบ</th>
+                            <th style="width: 150px;">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Add/Edit -->
+    <div id="jobModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">➕ เพิ่มงานใหม่</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="jobForm" onsubmit="saveJob(); return false;">
+                    <div class="form-group">
+                        <label>รหัสงาน *</label>
+                        <input type="text" id="jobId" required>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ประเภทงาน *</label>
+                            <select id="jobType" required>
+                                <option value="FDA">FDA (อาหาร)</option>
+                                <option value="DLD">DLD (อาหารสัตว์)</option>
+                                <option value="HALAL">HALAL</option>
+                                <option value="OTHER">อื่นๆ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>สถานะ *</label>
+                            <select id="jobStatus" required>
+                                <option value="Pending">รอดำเนินการ</option>
+                                <option value="In Progress">กำลังดำเนินการ</option>
+                                <option value="Complete">เสร็จสมบูรณ์</option>
+                                <option value="Cancelled">ยกเลิก</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ชื่อผลิตภัณฑ์ *</label>
+                        <input type="text" id="jobName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ผู้ผลิต</label>
+                        <input type="text" id="jobManufacturer">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>วันที่รับงาน *</label>
+                            <input type="date" id="jobTakingOrder" required>
+                        </div>
+                        <div class="form-group">
+                            <label>กำหนดเสร็จ</label>
+                            <input type="date" id="jobDeadline">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>ผู้รับผิดชอบ</label>
+                        <input type="text" id="jobResponsible">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Registration</label>
+                            <input type="text" id="jobRegistration">
+                        </div>
+                        <div class="form-group">
+                            <label>Case By</label>
+                            <input type="text" id="jobCaseBy">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+                <button type="button" class="btn btn-success" onclick="saveJob()">💾 บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // ข้อมูลเริ่มต้น
+        const DEFAULT_JOBS = [
+  {
+    "id": "RA-FDA-2024-026",
+    "type": "FDA",
+    "name": "ผงชูรสแท้ (วัตถุเจือปนอาหาร) ตรากุหลาบแดง",
+    "manufacturer": "Witcorp Products Ltd. ",
+    "takingOrder": "2024-10-24",
+    "deadline": "2025-05-13",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนฉลากอาหาร",
+    "caseBy": "MR"
+  },
+  {
+    "id": "RA-FDA-2025-001",
+    "type": "FDA",
+    "name": "Sodium benzoate  (OLD)",
+    "manufacturer": "Wuhan Youji Industries Co.,Ltd.",
+    "takingOrder": "2025-02-26",
+    "deadline": "2025-05-18",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-OT-2024-028",
+    "type": "OTHER",
+    "name": "Barcode",
+    "manufacturer": "Well Chemistry Ltd.",
+    "takingOrder": "2024-10-31",
+    "deadline": "2025-04-01",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ใช้งาน Barcode",
+    "caseBy": "WOW"
+  },
+  {
+    "id": "RA-FDA-2025-001",
+    "type": "FDA",
+    "name": " Xanthan Gum 80 MESH ",
+    "manufacturer": "Deosen Biochemical (Ordos) Ltd.",
+    "takingOrder": "2025-05-29",
+    "deadline": "2026-01-08",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-001",
+    "type": "FDA",
+    "name": " Xanthan Gum 200 MESH ",
+    "manufacturer": "Deosen Biochemical (Ordos) Ltd.",
+    "takingOrder": "2025-05-29",
+    "deadline": "2026-01-08",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2024-015",
+    "type": "FDA",
+    "name": "Xanthan Gum 80 mesh",
+    "manufacturer": "Xinjiang Meihua Amino Acid Co.,Ltd.",
+    "takingOrder": "2024-03-20",
+    "deadline": "2025-05-18",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-003",
+    "type": "FDA",
+    "name": "Trisodium Citrate ",
+    "manufacturer": "TTCA Co., Ltd ",
+    "takingOrder": "2025-02-26",
+    "deadline": "2025-09-02",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2024-015",
+    "type": "FDA",
+    "name": "Xanthan Gum 200 mesh",
+    "manufacturer": "Xinjiang Meihua Amino Acid Co.,Ltd.",
+    "takingOrder": "2024-03-20",
+    "deadline": "2025-09-08",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-005",
+    "type": "FDA",
+    "name": "Potassium Sorbate ",
+    "manufacturer": "Rugao Changjiang  Food Co., Ltd",
+    "takingOrder": "2025-02-06",
+    "deadline": "2025-05-02",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-006",
+    "type": "FDA",
+    "name": "Sodium benzoate (Prilled) (NEW TYPE)",
+    "manufacturer": "Wuhan Youji Industries Co., Ltd.",
+    "takingOrder": "2025-04-04",
+    "deadline": "2025-09-16",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-006",
+    "type": "FDA",
+    "name": "Trisodium Citrate  30-100 Mesh",
+    "manufacturer": "RZBC Co., Ltd .",
+    "takingOrder": "2025-02-26",
+    "deadline": "2025-09-20",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-004",
+    "type": "FDA",
+    "name": "Trisodium Citrate 12-40 Mesh",
+    "manufacturer": "RZBC Co., Ltd .",
+    "takingOrder": "2025-02-26",
+    "deadline": "2025-10-06",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-007",
+    "type": "FDA",
+    "name": "Glycine",
+    "manufacturer": "Hebei Huaheng Biological Technology Co., Ltd.\n",
+    "takingOrder": "2025-02-26",
+    "deadline": "2025-12-18",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-HALAL-2025-010",
+    "type": "HALAL",
+    "name": "Halal Cer. 2025-2026",
+    "manufacturer": "/",
+    "takingOrder": "2025-01-28",
+    "deadline": "2025-09-05",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ต่ออายุใบรับรองเครื่องหมายฮาลา",
+    "caseBy": "WCP"
+  },
+  {
+    "id": "RA-FDA-2025-010",
+    "type": "FDA",
+    "name": "Propylene glycol USP Grade ",
+    "manufacturer": "Qingdao Soda Ash Industrial Development Co., Ltd",
+    "takingOrder": "2025-05-26",
+    "deadline": "2025-06-16",
+    "status": "Cancelled",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "PN"
+  },
+  {
+    "id": "RA-FDA-2025-012",
+    "type": "FDA",
+    "name": "Soda Ash light  ",
+    "manufacturer": "Shandong Haitian Bio-Chemical Co., Ltd.",
+    "takingOrder": "2025-09-08",
+    "deadline": "2026-01-12",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-013",
+    "type": "FDA",
+    "name": "Monosodium glutamate (แก้ อ.19)",
+    "manufacturer": "Xinjiang Meihua Amino Acid Co.,Ltd.",
+    "takingOrder": "2025-09-24",
+    "deadline": "2025-11-24",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "NP"
+  },
+  {
+    "id": "RA-FDA-2025-013",
+    "type": "FDA",
+    "name": "Monosodium glutamate (แก้ อ.19)",
+    "manufacturer": "Jilin Meihua Amino Acid Co.,Ltd.",
+    "takingOrder": "2025-09-24",
+    "deadline": "2025-11-24",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "NP"
+  },
+  {
+    "id": "RA-FDA-2025-013",
+    "type": "FDA",
+    "name": "Monosodium glutamate (แก้ อ.19)",
+    "manufacturer": "Tongliao Meihua Biological Sci-Tech Co.,Ltd.",
+    "takingOrder": "2025-09-24",
+    "deadline": "2025-11-24",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "NP"
+  },
+  {
+    "id": "RA-FDA-2025-014",
+    "type": "FDA",
+    "name": "Baking Soda (Sodium Bicarbonate)\n(Food Additive) GO Ingredient Brand",
+    "manufacturer": "Witcorp Products Ltd. ",
+    "takingOrder": "2025-10-09",
+    "deadline": "2025-10-24",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "MR"
+  },
+  {
+    "id": "RA-FDA-2025-014",
+    "type": "FDA",
+    "name": "Preservative (Sodium Benzoate)(Food Additive) GO Ingredient Brand",
+    "manufacturer": "Witcorp Products Ltd. ",
+    "takingOrder": "2025-10-09",
+    "deadline": "2025-10-24",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "MR"
+  },
+  {
+    "id": "RA-FDA-2025-015",
+    "type": "FDA",
+    "name": "Sodium Bicarbonate Granular",
+    "manufacturer": "Qingdao Soda Ash Industrial Development Co., Ltd P",
+    "takingOrder": "2025-10-27",
+    "deadline": "2026-01-13",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-016",
+    "type": "FDA",
+    "name": "Maltodextrin (Food Additive) \nGO Ingredient Brand",
+    "manufacturer": "Witcorp Products Ltd. ",
+    "takingOrder": "2025-10-31",
+    "deadline": "2025-11-06",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "MR"
+  },
+  {
+    "id": "RA-FDA-2025-016",
+    "type": "FDA",
+    "name": "Ammonium Bicarbonate (Food Additive) \nGO Ingredient Brand",
+    "manufacturer": "Witcorp Products Ltd. ",
+    "takingOrder": "2025-10-31",
+    "deadline": "2025-11-06",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "MR"
+  },
+  {
+    "id": "RA-FDA-2025-016",
+    "type": "FDA",
+    "name": "Calcium Chloride (Food Additive) \nGO Ingredient Brand",
+    "manufacturer": "Witcorp Products Ltd. ",
+    "takingOrder": "2025-10-31",
+    "deadline": "2025-11-06",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "MR"
+  },
+  {
+    "id": "RA-FDA-2025-016",
+    "type": "FDA",
+    "name": "Citric Acid Monohydrate (Food Additive) \nGO Ingredient Brand",
+    "manufacturer": "Witcorp Products Ltd. ",
+    "takingOrder": "2025-10-31",
+    "deadline": "2025-11-06",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "MR"
+  },
+  {
+    "id": "RA-FDA-2025-017",
+    "type": "FDA",
+    "name": "Caramel Color E150c liquid",
+    "manufacturer": "Shandong Zhonghui Biotechnology Co., Ltd.",
+    "takingOrder": "2025-11-04",
+    "deadline": "2025-11-28",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-018",
+    "type": "FDA",
+    "name": "Caramel Color E150d liquid",
+    "manufacturer": "Shandong Zhonghui Biotechnology Co., Ltd.",
+    "takingOrder": "2025-11-04",
+    "deadline": "2025-11-28",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-019",
+    "type": "FDA",
+    "name": "Erythritol 16-80 Mesh",
+    "manufacturer": "Dongxiao Biotechnology Co.,Ltd.",
+    "takingOrder": "2025-11-04",
+    "deadline": "2025-11-21",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-020",
+    "type": "FDA",
+    "name": "Monosodium Glutamate 40 Mesh ",
+    "manufacturer": "Ningxia Eppen Biotech Co., Ltd.",
+    "takingOrder": "2025-11-20",
+    "deadline": "2025-12-02",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-020",
+    "type": "FDA",
+    "name": "Monosodium Glutamate 50 Mesh ",
+    "manufacturer": "Ningxia Eppen Biotech Co., Ltd.",
+    "takingOrder": "2025-11-20",
+    "deadline": "2025-12-02",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-020",
+    "type": "FDA",
+    "name": "Monosodium Glutamate 60 Mesh ",
+    "manufacturer": "Ningxia Eppen Biotech Co., Ltd.",
+    "takingOrder": "2025-11-20",
+    "deadline": "2025-12-02",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-021",
+    "type": "FDA",
+    "name": "Ascorbic acid",
+    "manufacturer": "North East Pharmaceutical Co., Ltd.",
+    "takingOrder": "2025-12-03",
+    "deadline": "2025-12-15",
+    "status": "In Progress",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-DOA-2025-022",
+    "type": "DOA",
+    "name": "Ferrous Sulphate Heptahydrate ",
+    "manufacturer": "Baise Johnson Chemical Co., Ltd. ",
+    "takingOrder": "2025-10-22",
+    "deadline": "2025-12-03",
+    "status": "Complete",
+    "responsible": "คุณชญาภา",
+    "registration": "หนังสือหารือ",
+    "caseBy": "PY"
+  },
+  {
+    "id": "RA-DOA-2025-023",
+    "type": "DOA",
+    "name": "Ferrous Sulphate Monohydrate ",
+    "manufacturer": "Baise Johnson Chemical Co., Ltd. ",
+    "takingOrder": "2025-11-06",
+    "deadline": "2025-12-03",
+    "status": "Complete",
+    "responsible": "คุณชญาภา",
+    "registration": "หนังสือหารือ",
+    "caseBy": "SR"
+  },
+  {
+    "id": "RA-DOA-2025-024",
+    "type": "DOA",
+    "name": "Dipotassium phosphate ",
+    "manufacturer": "Wengfu&Zijin Chemical Industry Co., Ltd.",
+    "takingOrder": "2025-12-10",
+    "deadline": "2026-01-15",
+    "status": "In Progress",
+    "responsible": "คุณชญาภา",
+    "registration": "หนังสือหารือ",
+    "caseBy": "SR"
+  },
+  {
+    "id": "RA-DLD-2024-017",
+    "type": "DLD",
+    "name": "Sodium Bicarbonate   ",
+    "manufacturer": "Hengyang Aijie Technology Co., Ltd",
+    "takingOrder": "2024-06-12",
+    "deadline": "2025-11-06",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียน",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-DLD-2024-029",
+    "type": "DLD",
+    "name": "Monodicalcium Phosphate Feed grade (Granular)",
+    "manufacturer": "KUNMING CHUAN JIN NUO CHEMICAL CO., LTD.",
+    "takingOrder": "2024-09-27",
+    "deadline": "2025-07-08",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียน",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2025-008",
+    "type": "DLD",
+    "name": "Glycine feed grade",
+    "manufacturer": "Hebei Huaheng Biological Technology Co., Ltd\n",
+    "takingOrder": "2025-02-26",
+    "deadline": "2025-04-08",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียน",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-DLD-2024-017",
+    "type": "DLD",
+    "name": "Sodium Bicarbonate   ",
+    "manufacturer": "Hengyang Aijie Technology Co., Ltd",
+    "takingOrder": "2025-10-17",
+    "deadline": "2025-11-06",
+    "status": "Complete",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "แก้ไขทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2024-012",
+    "type": "FDA",
+    "name": "Monosodium glutamate 20-60 Mesh",
+    "manufacturer": "Tongliao Meihua Biological Sci-Tech Co.,Ltd.",
+    "takingOrder": "2025-06-16",
+    "deadline": "/",
+    "status": "Pending",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  },
+  {
+    "id": "RA-FDA-2024-013",
+    "type": "FDA",
+    "name": "Monosodium glutamate 60-120 Mesh",
+    "manufacturer": "Tongliao Meihua Biological Sci-Tech Co.,Ltd.",
+    "takingOrder": "2025-06-16",
+    "deadline": "/",
+    "status": "Pending",
+    "responsible": "คุณณัฏฐชา",
+    "registration": "ขึ้นทะเบียนตำหรับอาหาร",
+    "caseBy": "CK"
+  }
+];
+        
+        let allJobs = [];
+        let filteredJobs = [];
+        let statusChart, typeChart, monthlyChart;
+        let editingIndex = -1;
+
+        // โหลดข้อมูลจาก Local Storage หรือใช้ข้อมูลเริ่มต้น
+        function loadData() {
+            const savedData = localStorage.getItem('dashboardJobs');
+            if (savedData) {
+                try {
+                    allJobs = JSON.parse(savedData);
+                    console.log('✅ โหลดข้อมูลจาก Local Storage สำเร็จ:', allJobs.length, 'รายการ');
+                } catch (e) {
+                    console.error('❌ ข้อผิดพลาดในการโหลดข้อมูล:', e);
+                    allJobs = [...DEFAULT_JOBS];
+                    saveData();
+                }
+            } else {
+                allJobs = [...DEFAULT_JOBS];
+                saveData();
+                console.log('✅ โหลดข้อมูลเริ่มต้น:', allJobs.length, 'รายการ');
+            }
+            filteredJobs = [...allJobs];
+            updateDashboard();
+        }
+
+        // บันทึกข้อมูลลง Local Storage
+        function saveData() {
+            try {
+                localStorage.setItem('dashboardJobs', JSON.stringify(allJobs));
+                console.log('💾 บันทึกข้อมูลสำเร็จ');
+            } catch (e) {
+                console.error('❌ ไม่สามารถบันทึกข้อมูลได้:', e);
+                showNotification('เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+            }
+        }
+
+        // Reset ข้อมูลกลับไปเป็นค่าเริ่มต้น
+        function resetToDefault() {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะ Reset ข้อมูลกลับไปเป็นค่าเริ่มต้น?\nข้อมูลที่แก้ไขทั้งหมดจะหายไป!')) {
+                allJobs = [...DEFAULT_JOBS];
+                saveData();
+                filterData();
+                showNotification('Reset ข้อมูลสำเร็จ!', 'success');
+            }
+        }
+
+        function filterData() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const monthFilter = document.getElementById('monthFilter').value;
+            const yearFilter = document.getElementById('yearFilter').value;
+            const registrationFilter = document.getElementById('registrationFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            filteredJobs = allJobs.filter(job => {
+                const typeMatch = typeFilter === 'ALL' || job.type === typeFilter;
+                const monthMatch = monthFilter === 'ALL' || job.takingOrder.substring(5, 7) === monthFilter;
+                const yearMatch = yearFilter === 'ALL' || job.takingOrder.substring(0, 4) === yearFilter;
+                const registrationMatch = registrationFilter === 'ALL' || job.registration === registrationFilter;
+                const statusMatch = statusFilter === 'ALL' || job.status === statusFilter;
+                return typeMatch && monthMatch && yearMatch && registrationMatch && statusMatch;
+            });
+
+            updateDashboard();
+        }
+
+        function updateDashboard() {
+            updateStats();
+            updateCharts();
+            updateTable();
+        }
+
+        function updateStats() {
+            const total = filteredJobs.length;
+            const complete = filteredJobs.filter(j => j.status === 'Complete').length;
+            const progress = filteredJobs.filter(j => j.status === 'In Progress').length;
+            const remaining = filteredJobs.filter(j => j.status === 'Pending').length;
+
+            document.getElementById('totalJobs').textContent = total;
+            document.getElementById('completeJobs').textContent = complete;
+            document.getElementById('progressJobs').textContent = progress;
+            document.getElementById('remainingJobs').textContent = remaining;
+
+            const completePercent = total > 0 ? ((complete / total) * 100).toFixed(1) : 0;
+            const progressPercent = total > 0 ? ((progress / total) * 100).toFixed(1) : 0;
+            const remainingPercent = total > 0 ? ((remaining / total) * 100).toFixed(1) : 0;
+
+            document.getElementById('completePercent').textContent = `${completePercent}%`;
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('remainingPercent').textContent = `${remainingPercent}%`;
+        }
+
+        function updateCharts() {
+            const statusCounts = {
+                'เสร็จสมบูรณ์': filteredJobs.filter(j => j.status === 'Complete').length,
+                'กำลังดำเนินการ': filteredJobs.filter(j => j.status === 'In Progress').length,
+                'รอดำเนินการ': filteredJobs.filter(j => j.status === 'Pending').length,
+                'ยกเลิก': filteredJobs.filter(j => j.status === 'Cancelled').length
+            };
+
+            if (statusChart) statusChart.destroy();
+            statusChart = new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#6b7280'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 12 } }
+                        }
+                    }
+                }
+            });
+
+            const typeCounts = {
+                'FDA': filteredJobs.filter(j => j.type === 'FDA').length,
+                'DLD': filteredJobs.filter(j => j.type === 'DLD').length,
+                'HALAL': filteredJobs.filter(j => j.type === 'HALAL').length,
+                'OTHER': filteredJobs.filter(j => j.type === 'OTHER').length
+            };
+
+            if (typeChart) typeChart.destroy();
+            typeChart = new Chart(document.getElementById('typeChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(typeCounts),
+                    datasets: [{
+                        label: 'จำนวนงาน',
+                        data: Object.values(typeCounts),
+                        backgroundColor: ['#667eea', '#ec4899', '#10b981', '#6b7280'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const monthNames = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            const monthlyCounts = new Array(12).fill(0);
+            
+            filteredJobs.forEach(job => {
+                const month = parseInt(job.takingOrder.substring(5, 7)) - 1;
+                if (month >= 0 && month < 12) monthlyCounts[month]++;
+            });
+
+            if (monthlyChart) monthlyChart.destroy();
+            monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+                type: 'line',
+                data: {
+                    labels: monthNames,
+                    datasets: [{
+                        label: 'งานที่รับในแต่ละเดือน',
+                        data: monthlyCounts,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('jobsTableBody');
+            tbody.innerHTML = '';
+
+            filteredJobs.forEach((job, index) => {
+                const actualIndex = allJobs.findIndex(j => j.id === job.id);
+                
+                row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><strong>${job.id}</strong></td>
+                    <td><span class="type-badge type-${job.type}">${job.type}</span></td>
+                    <td>${job.name}</td>
+                    <td style="font-size: 0.85em;">${job.manufacturer}</td>
+                    <td>${formatDate(job.takingOrder)}</td>
+                    <td>${formatDate(job.deadline)}</td>
+                    <td><span class="status-badge status-${job.status.toLowerCase().replace(' ', '')}">${getStatusText(job.status)}</span></td>
+                    <td>${job.responsible}</td>
+                    <td>
+                        <button class="btn btn-edit" onclick="editJob(${actualIndex})">✏️ แก้ไข</button>
+                        <button class="btn btn-danger" style="font-size: 0.85em; padding: 6px 12px;" onclick="deleteJob(${actualIndex})">🗑️ ลบ</button>
+                    </td>
+                `;
+            });
+
+            document.getElementById('tableCount').textContent = filteredJobs.length;
+        }
+
+        function searchTable() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toLowerCase();
+            const tbody = document.getElementById('jobsTableBody');
+            const rows = tbody.getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            }
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'Complete': '✓ เสร็จสมบูรณ์',
+                'In Progress': '⏳ กำลังดำเนินการ',
+                'Pending': '⏸ รอดำเนินการ',
+                'Cancelled': '✖ ยกเลิก'
+            };
+            return statusMap[status] || status;
+        }
+
+        function openAddModal() {
+            editingIndex = -1;
+            document.getElementById('modalTitle').textContent = '➕ เพิ่มงานใหม่';
+            document.getElementById('jobForm').reset();
+            document.getElementById('jobModal').style.display = 'block';
+        }
+
+        function editJob(index) {
+            editingIndex = index;
+            const job = allJobs[index];
+            
+            document.getElementById('modalTitle').textContent = '✏️ แก้ไขงาน';
+            document.getElementById('jobId').value = job.id;
+            document.getElementById('jobType').value = job.type;
+            document.getElementById('jobName').value = job.name;
+            document.getElementById('jobManufacturer').value = job.manufacturer;
+            document.getElementById('jobTakingOrder').value = job.takingOrder;
+            document.getElementById('jobDeadline').value = job.deadline;
+            document.getElementById('jobStatus').value = job.status;
+            document.getElementById('jobResponsible').value = job.responsible;
+            document.getElementById('jobRegistration').value = job.registration || '';
+            document.getElementById('jobCaseBy').value = job.caseBy || '';
+            
+            document.getElementById('jobModal').style.display = 'block';
+        }
+
+        function deleteJob(index) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบงานนี้?')) {
+                allJobs.splice(index, 1);
+                saveData(); // บันทึกข้อมูลทันทีหลังลบ
+                filterData();
+                showNotification('ลบงานสำเร็จ!', 'success');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('jobModal').style.display = 'none';
+        }
+
+        function saveJob() {
+            const job = {
+                id: document.getElementById('jobId').value,
+                type: document.getElementById('jobType').value,
+                name: document.getElementById('jobName').value,
+                manufacturer: document.getElementById('jobManufacturer').value || '-',
+                takingOrder: document.getElementById('jobTakingOrder').value,
+                deadline: document.getElementById('jobDeadline').value || document.getElementById('jobTakingOrder').value,
+                status: document.getElementById('jobStatus').value,
+                responsible: document.getElementById('jobResponsible').value || 'ไม่ระบุ',
+                registration: document.getElementById('jobRegistration').value || '-',
+                caseBy: document.getElementById('jobCaseBy').value || '-'
+            };
+
+            if (editingIndex === -1) {
+                allJobs.push(job);
+                showNotification('เพิ่มงานใหม่สำเร็จ!', 'success');
+            } else {
+                allJobs[editingIndex] = job;
+                showNotification('แก้ไขงานสำเร็จ!', 'success');
+            }
+
+            saveData(); // บันทึกข้อมูลทันทีหลังบันทึก
+            closeModal();
+            filterData();
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(allJobs.map(job => ({
+                'รหัสงาน': job.id,
+                'ประเภท': job.type,
+                'ชื่อผลิตภัณฑ์': job.name,
+                'ผู้ผลิต': job.manufacturer,
+                'วันที่รับงาน': job.takingOrder,
+                'กำหนดเสร็จ': job.deadline,
+                'สถานะ': job.status,
+                'ผู้รับผิดชอบ': job.responsible,
+                'Registration': job.registration,
+                'Case By': job.caseBy
+            })));
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Jobs Data');
+
+            const today = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `Jobs_Dashboard_${today}.xlsx`);
+            
+            showNotification('Export ไฟล์ Excel สำเร็จ!', 'success');
+        }
+
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                    const importedJobs = jsonData.map(row => ({
+                        id: row['รหัสงาน'] || row['id'] || 'N/A',
+                        type: row['ประเภท'] || row['type'] || 'OTHER',
+                        name: row['ชื่อผลิตภัณฑ์'] || row['name'] || 'ไม่ระบุ',
+                        manufacturer: row['ผู้ผลิต'] || row['manufacturer'] || '-',
+                        takingOrder: formatDateForInput(row['วันที่รับงาน'] || row['takingOrder']),
+                        deadline: formatDateForInput(row['กำหนดเสร็จ'] || row['deadline']),
+                        status: row['สถานะ'] || row['status'] || 'Pending',
+                        responsible: row['ผู้รับผิดชอบ'] || row['responsible'] || 'ไม่ระบุ',
+                        registration: row['Registration'] || row['registration'] || '-',
+                        caseBy: row['Case By'] || row['caseBy'] || '-'
+                    }));
+
+                    if (confirm(`พบข้อมูล ${importedJobs.length} รายการ\nต้องการนำเข้าข้อมูลใหม่หรือไม่?`)) {
+                        allJobs = importedJobs;
+                        saveData(); // บันทึกข้อมูลทันทีหลัง Import
+                        filterData();
+                        showNotification('Import ข้อมูลสำเร็จ!', 'success');
+                    }
+                } catch (error) {
+                    showNotification('เกิดข้อผิดพลาดในการ Import ไฟล์', 'error');
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = '';
+        }
+
+        function formatDateForInput(dateValue) {
+            if (!dateValue) return new Date().toISOString().split('T')[0];
+            
+            if (typeof dateValue === 'number') {
+                const date = XLSX.SSF.parse_date_code(dateValue);
+                return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+            }
+            
+            const dateStr = String(dateValue);
+            if (dateStr.includes('-')) return dateStr.split('T')[0];
+            if (dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+            }
+            
+            return new Date().toISOString().split('T')[0];
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('jobModal')) {
+                closeModal();
+            }
+        }
+
+        // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
+        loadData();
+    </script>
+</body>
+</html>
